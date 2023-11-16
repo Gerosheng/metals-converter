@@ -17,12 +17,12 @@ $apiCurrenciesUrl = "https://cdn.jsdelivr.net/gh/fawazahmed0/currency-api@1/late
 $jsonCurrency = file_get_contents($apiCurrenciesUrl);
 $dataCurrencies = json_decode($jsonCurrency, true);
 if ($exchangeDirection === 'currencyToMetal') {
-    $baseOptions = $dataCurrencies;
-    $targetOptions = $preciousMetals;
+    $baseOptions = $_GET['baseCurrency'];
+    $targetOptions = $_GET['targetCurrency'];
 
 } else {
-    $baseOptions = $preciousMetals;
-    $targetOptions = $dataCurrencies;
+    $baseOptions = $_GET['targetCurrency'];
+    $targetOptions = $_GET['baseCurrency'];
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
@@ -65,7 +65,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             $amount = isset($_GET['amount']) ? floatval($_GET['amount']) : 1;
 
             // Calculate the converted amount
-            $convertedAmount = $amount * $exchangeRate;
+           ($exchangeDirection === 'currencyToMetal') ? $convertedAmount = $amount * $exchangeRate : $convertedAmount = $amount * 1/$exchangeRate;
 
             // Display the result
             echo "Exchange Rate from $baseCurrency to $targetCurrency: $exchangeRate\n";
@@ -214,15 +214,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     <?php
         if ($convertedAmount) {
             $baseCurrencySymbol = isset($_GET['baseCurrency']) ? $_GET['baseCurrency'] : 'UnknownBaseCurrency';
-            $baseCurrencyName = isset($baseOptions[$baseCurrencySymbol]) ? $baseOptions[$baseCurrencySymbol] : 'Unknown Base Currency';
-            $targetCurrencyName = isset($_GET['targetCurrency']) ? ($_GET['targetCurrency']) : 'Unknown Target Currency';
+            $baseCurrencyName = isset($baseOptions) ? $baseOptions : 'Unknown Base Currency';
+            $targetCurrencyName = isset($targetOptions) ? $targetOptions : 'Unknown Target Currency';
 
             echo "<p>$amount " . strtoupper($baseCurrencyName) . " =</p>";
             echo "<p>$convertedAmount " . strtoupper($targetCurrencyName) . "</p>";
 
             if ($exchangeDirection === 'metalToCurrency') {
-                echo "<p>1 " . strtoupper($targetCurrencyName) . " = " . number_format(1 / $exchangeRate, 7) . " " . strtoupper($baseCurrencyName) . "</p>";
-                echo "<p>1 " . strtoupper($baseCurrencyName) . " = " . number_format($exchangeRate, 7) . " " . strtoupper($targetCurrencyName) . "</p>";
+                echo "<p>1 " . strtoupper($targetCurrencyName) . " = " . number_format($exchangeRate, 7) . " " . strtoupper($baseCurrencyName) . "</p>";
+                echo "<p>1 " . strtoupper($baseCurrencyName) . " = " . number_format(1 / $exchangeRate, 7) . " " . strtoupper($targetCurrencyName) . "</p>";
             } else {
                 // Corrected the order of units in the following lines
                 echo "<p>1 " . strtoupper($baseCurrencyName) . " = " . number_format($exchangeRate, 7) . " " . strtoupper($targetCurrencyName) . "</p>";
