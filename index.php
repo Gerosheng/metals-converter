@@ -1,5 +1,7 @@
 <?php
+
 $convertedAmount = "";
+
 $preciousMetals = [
     'Gold' => 'xau',
     'Silver' => 'xag',
@@ -8,54 +10,79 @@ $preciousMetals = [
     // Add more metals as needed
 ];
 
+//default value is 'currencyToMetal'
+$exchangeDirection = isset($_GET['exchangeDirection']) ? $_GET['exchangeDirection'] : 'currencyToMetal';
+
+$apiCurrenciesUrl = "https://cdn.jsdelivr.net/gh/fawazahmed0/currency-api@1/latest/currencies.json";
+$jsonCurrency = file_get_contents($apiCurrenciesUrl);
+$dataCurrencies = json_decode($jsonCurrency, true);
+if ($exchangeDirection === 'currencyToMetal') {
+    $baseOptions = $dataCurrencies;
+    $targetOptions = $preciousMetals;
+
+} else {
+    $baseOptions = $preciousMetals;
+    $targetOptions = $dataCurrencies;
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 
-    // Get parameters from the URL
-    $baseCurrency = isset($_GET['baseCurrency']) ? $_GET['baseCurrency'] : 'usd';
+    if (isset($_GET['convert'])) {
+        // Get parameters from the URL
+        $baseCurrency = isset($_GET['baseCurrency']) ? $_GET['baseCurrency'] : 'usd';
 
-    if (empty($baseCurrency)) {
-        // Handle the default case, e.g., set it to 'usd'
-        $baseCurrency = 'usd';
+        if (empty($baseCurrency)) {
+            // Handle the default case, e.g., set it to 'usd'
+            $baseCurrency = 'usd';
+        }
+        
+        $targetCurrency = isset($_GET['targetCurrency']) ? $_GET['targetCurrency'] : 'xau';
+        
+        if (empty($targetCurrency)) {
+            // Handle the default case, e.g., set it to 'xau'
+            $targetCurrency = 'xau';
+        }
+
+        $apiCurrenciesUrl = "https://cdn.jsdelivr.net/gh/fawazahmed0/currency-api@1/latest/currencies.json";
+        $jsonCurrency = file_get_contents($apiCurrenciesUrl);
+        $dataCurrencies = json_decode($jsonCurrency, true);
+        
+        // Construct the API URL
+        $apiUrl = "https://cdn.jsdelivr.net/gh/fawazahmed0/currency-api@1/latest/currencies/$baseCurrency.json";
+
+        // Fetch the currencies data from the API
+        $jsonRates = file_get_contents($apiUrl);
+
+        // Decode JSON response:
+        $dataRates = json_decode($jsonRates, true);
+
+        // Check if decoding was successful
+        if ($dataRates && isset($dataRates[$baseCurrency][$targetCurrency])) {
+            // Get the exchange rate for the specified target currency
+            $exchangeRate = $dataRates[$baseCurrency][$targetCurrency];
+
+            // Get the amount from the form
+            $amount = isset($_GET['amount']) ? floatval($_GET['amount']) : 1;
+
+            // Calculate the converted amount
+            $convertedAmount = $amount * $exchangeRate;
+
+            // Display the result
+            echo "Exchange Rate from $baseCurrency to $targetCurrency: $exchangeRate\n";
+        } else {
+            // Output the API response for debugging
+            echo "API Response: " . $jsonRates;
+            echo "Error decoding JSON response or invalid base/target currency.";
+        }
     }
+
+    elseif (isset($_GET['toggleExchangeDirection'])) {
+        // Toggle the exchange direction
+        $exchangeDirection = ($exchangeDirection === 'currencyToMetal') ? 'metalToCurrency' : 'currencyToMetal';
     
-    $targetCurrency = isset($_GET['targetCurrency']) ? $_GET['targetCurrency'] : 'xau';
-    
-    if (empty($targetCurrency)) {
-        // Handle the default case, e.g., set it to 'xau'
-        $targetCurrency = 'xau';
+
     }
 
-    $apiCurrenciesUrl = "https://cdn.jsdelivr.net/gh/fawazahmed0/currency-api@1/latest/currencies.json";
-    $jsonCurrency = file_get_contents($apiCurrenciesUrl);
-    $dataCurrencies = json_decode($jsonCurrency, true);
-    
-    // Construct the API URL
-    $apiUrl = "https://cdn.jsdelivr.net/gh/fawazahmed0/currency-api@1/latest/currencies/$baseCurrency.json";
-
-    // Fetch the currencies data from the API
-    $jsonRates = file_get_contents($apiUrl);
-
-    // Decode JSON response:
-    $dataRates = json_decode($jsonRates, true);
-
-    // Check if decoding was successful
-    if ($dataRates && isset($dataRates[$baseCurrency][$targetCurrency])) {
-        // Get the exchange rate for the specified target currency
-        $exchangeRate = $dataRates[$baseCurrency][$targetCurrency];
-
-        // Get the amount from the form
-        $amount = isset($_GET['amount']) ? floatval($_GET['amount']) : 1;
-
-        // Calculate the converted amount
-        $convertedAmount = $amount * $exchangeRate;
-
-        // Display the result
-        echo "Exchange Rate from $baseCurrency to $targetCurrency: $exchangeRate\n";
-    } else {
-        // Output the API response for debugging
-        echo "API Response: " . $jsonRates;
-        echo "Error decoding JSON response or invalid base/target currency.";
-    }
 }
 ?>
 
@@ -125,12 +152,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     </header>
     <main>
         <form action="" method="get" id="converterForm">
+
             <label for="amount">Amount:</label>
-            <input type="number" id="amount" name="amount" required>
+            <input type="number" id="amount" name="amount" >
+
+        <?php if ($exchangeDirection === 'metalToCurrency'): ?>
+
+            <label for="targetCurrency">Target Metal (in ounces):</label>
+            <select id="targetCurrency" name="targetCurrency" required>
+                <?php foreach ($preciousMetals as $metal => $symbol): ?>
+                    <?php $selected = ($metal === 'Gold') ? 'selected' : ''; ?>
+                    <option value="<?php echo $symbol; ?>" <?php echo $selected; ?>>(<?php echo strtoupper($symbol); ?>) <?php echo $metal; ?></option>
+                <?php endforeach; ?>
+            </select>
 
             <label for="baseCurrency">Base Currency:</label>
             <select id="baseCurrency" name="baseCurrency" required>
-                <!-- <option value="usd">USD</options> -->
                 <?php 
                     foreach ($dataCurrencies as $currencyCode => $currencyName): ?>
                     <?php $selected = ($currencyCode === 'usd') ? 'selected' : ''; ?>
@@ -140,36 +177,60 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
                     <?php endforeach; ?>
             </select>
 
+        <?php else: ?>
+
+            <label for="baseCurrency">Base Currency:</label>
+            <select id="baseCurrency" name="baseCurrency" required>
+                <?php 
+                    foreach ($dataCurrencies as $currencyCode => $currencyName): ?>
+                        <?php $selected = ($currencyCode === 'usd') ? 'selected' : ''; ?>
+                        <option value="<?php echo $currencyCode; ?>" <?php echo $selected; ?>>
+                        (<?php echo strtoupper($currencyCode); ?>) <?php echo $currencyName; ?>
+                        </option>
+                    <?php endforeach; ?>
+            </select>
+
             <label for="targetCurrency">Target Metal (in ounces):</label>
             <select id="targetCurrency" name="targetCurrency" required>
-                <!-- <option value="xau">(XAU) GOLD ounce</option> -->
-                <!-- <option value="xpd">(XPD) PALLADIUM ounce</option> -->
-                <!-- <option value="xag">(XAG) SILVER ounce</option> -->
-                <!-- <option value="xpt">(XPT) PLATINUM ounce</option> -->
                 <?php foreach ($preciousMetals as $metal => $symbol): ?>
                     <?php $selected = ($metal === 'Gold') ? 'selected' : ''; ?>
                     <option value="<?php echo $symbol; ?>" <?php echo $selected; ?>>(<?php echo strtoupper($symbol); ?>) <?php echo $metal; ?></option>
                 <?php endforeach; ?>
             </select>
+            <?php endif; ?>
 
-            <button type="submit">Convert</button>
+
+            <button type="submit" name="convert">Convert</button>
+
+            <button type="submit" name="toggleExchangeDirection">Toggle Direction</button>
+            <input type="hidden" name="exchangeDirection" id="exchangeDirection" value="<?php echo $exchangeDirection; ?>">
+        
         </form>
-
+        <?php
+            echo "Exchange Direction: $exchangeDirection";
+        ?>
         <div id="result">
             <!-- Display conversion results here -->
-            <?php
-            if ($convertedAmount) {
-                echo "<p>$amount " . strtoupper($baseCurrency) . " =</p>";
-                echo "<p>$convertedAmount " . strtoupper($targetCurrency) . "</p>";
-                echo "<p>1 " . strtoupper($baseCurrency) . " = " . number_format(1 / $exchangeRate, 7) . " " . strtoupper($targetCurrency) . "</p>";
-                echo "<p>1 " . strtoupper($targetCurrency) . " = " . number_format($exchangeRate, 7) . " " . strtoupper($baseCurrency) . "</p>";
-            }
-            ?>        
-    </div>
+    <?php
+        if ($convertedAmount) {
+            $baseCurrencySymbol = isset($_GET['baseCurrency']) ? $_GET['baseCurrency'] : 'UnknownBaseCurrency';
+            $baseCurrencyName = isset($baseOptions[$baseCurrencySymbol]) ? $baseOptions[$baseCurrencySymbol] : 'Unknown Base Currency';
+            $targetCurrencyName = isset($_GET['targetCurrency']) ? ($_GET['targetCurrency']) : 'Unknown Target Currency';
 
-        <div id="historialData">
-            <!-- Display historical data if implemented -->
-        </div>
+            echo "<p>$amount " . strtoupper($baseCurrencyName) . " =</p>";
+            echo "<p>$convertedAmount " . strtoupper($targetCurrencyName) . "</p>";
+
+            if ($exchangeDirection === 'metalToCurrency') {
+                echo "<p>1 " . strtoupper($targetCurrencyName) . " = " . number_format(1 / $exchangeRate, 7) . " " . strtoupper($baseCurrencyName) . "</p>";
+                echo "<p>1 " . strtoupper($baseCurrencyName) . " = " . number_format($exchangeRate, 7) . " " . strtoupper($targetCurrencyName) . "</p>";
+            } else {
+                // Corrected the order of units in the following lines
+                echo "<p>1 " . strtoupper($baseCurrencyName) . " = " . number_format($exchangeRate, 7) . " " . strtoupper($targetCurrencyName) . "</p>";
+                echo "<p>1 " . strtoupper($targetCurrencyName) . " = " . number_format(1 / $exchangeRate, 7) . " " . strtoupper($baseCurrencyName) . "</p>";
+            }
+        }
+    ?>         
+    </div>
 
     </main>
 </body>
