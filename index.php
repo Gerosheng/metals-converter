@@ -66,8 +66,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             // Calculate the converted amount
            ($exchangeDirection === 'currencyToMetal') ? $convertedAmount = $amount * $exchangeRate : $convertedAmount = $amount * 1/$exchangeRate;
 
-            // Display the result
-            echo "Exchange Rate from $baseCurrency to $targetCurrency: $exchangeRate\n";
         } else {
             // Output the API response for debugging
             echo "API Response: " . $jsonRates;
@@ -194,7 +192,7 @@ form #convert{
     margin: 20px 0 30px;
 }
 
-form button{
+form #convert{
     height: 52px;
     color: #fff;
     font-size: 17px;
