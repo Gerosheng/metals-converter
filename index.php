@@ -88,84 +88,168 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Precious Metals Converter</title>
-    
-    <style>
-body {
-    font-family: 'Arial', sans-serif;
-    background-color: #f4f4f4;
-    color: #333;
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" integrity="sha512-z3gLpd7yknf1YoNbCzqRKc4qyor8gaKU1qmn+CShxbuBusANI9QpRohGBreCFkKxLhei6S9CQXFEbbKuqLg0DA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<style>
+
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@300&family=Poppins&display=swap');
+
+*{
     margin: 0;
     padding: 0;
+    box-sizing: border-box;
+    font-family: 'Nunito', 'Poppins', sans-serif;
+}
+body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 0 10px;
+    background-color: #675AFE;
+    margin: 0;
 }
 
-header {
-    background-color: #007bff;
+::selection{
     color: #fff;
+    background: #675AFE;
+}
+
+.wrapper{
+    width: 80%;
+    padding: 30px;
+    border-radius: 7px;
+    background: #fff;
+    box-shadow: 7px 7px 20px rgba(0, 0, 0, 0.05)
+}
+
+.wrapper header{
+    font-size: 14px;
+    font-weight: 500;
     text-align: center;
-    padding: 1rem;
 }
 
-main {
-    max-width: 800px;
-    margin: 20px auto;
-    padding: 20px;
-    background-color: #fff;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+.wrapper form{
+    margin: 40px 0 20px 0;
 }
 
-form {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    grid-gap: 16px;
+form :where(input, select, button){
+    width: 100%;
+    outline: none;
+    border-radius: 5px;
+    border: none;
+}
+
+form label{
+    font-size: 18px;
+    margin-bottom: 5px;
+}
+
+form input{
+    height: 50px;
+    font-size: 17px;
+    padding: 0 15px;
+    border: 1px solid #999;
+}
+form input:focus{
+    padding: 0 14px;
+    border: 2px solid #675AFE;
+}
+
+form .drop-list{
+    display: flex;
+    margin-top: 20px;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.drop-list .select-box{
+    display: flex;
+    width: auto;
+    height: 45px;
+    align-items: center;
+    border-radius: 5px;
+    justify-content: center;
+    border: 1px solid #999;
+}
+
+.select-box img{
+
+}
+
+.select-box select{
+    width: auto;
+    font-size: 16px;
+    background: none;
+    margin: 0 -5px 0 5px;
+}
+
+.drop-list .swap-icon{
+    cursor: pointer;
+    margin-top: 30px;
+    font-size: 22px;
+}
+
+form #convert{
+    font-size: 17px;
+    margin: 20px 0 30px;
+}
+
+form button{
+    height: 52px;
+    color: #fff;
+    font-size: 17px;
+    cursor: pointer;
+    background: #675AFE;
+    transition: 0.3s ease;
+}
+
+form button:hover{
+    background: #4534fe;
 }
 
 label {
-    margin-bottom: 8px;
-    grid-column: span 2; /* Labels span two columns */
-}
-
-input, select {
-    padding: 12px;
-    border: 1px solid #ddd;
-    border-radius: 6px;
-    font-size: 16px;
-    grid-column: span 1; /* Inputs and selects span one column */
-}
-
-button {
-    background-color: #007bff;
-    color: #fff;
-    border: none;
-    cursor: pointer;
-    padding: 12px;
-    border-radius: 6px;
-    grid-column: span 2; /* Button spans two columns */
-}
-
-button:hover {
-    background-color: #0056b3;
+    width: 100%;
 }
 
 #result {
     margin-top: 20px;
 }
+
+/* Responsive styles */
+@media only screen and (max-width: 600px) {
+    form {
+        flex-direction: column;
+    }
+}
+/* Reset flex-direction for larger screens */
+@media only screen and (min-width: 601px) {
+    form {
+        flex-direction: row;
+    }
+}
+ 
 </style>
 
 
 </head>
 <body>
+    <div class="wrapper">
     <header>
         <h1>Precious Metals Converter</h1>
     </header>
     <main>
         <form action="" method="get" id="converterForm">
 
-            <label for="amount">Amount:</label>
-            <input type="number" id="amount" name="amount" value="<?php echo isset($_GET['amount']) ? htmlspecialchars($_GET['amount']) : ''; ?>">
+            <div class="amount">
+                <label for="amount">Enter Amount</label>
+                <input type="number" id="amount" name="amount" value="<?php echo isset($_GET['amount']) ? htmlspecialchars($_GET['amount']) : 1000; ?>">
+            </div>
 
         <?php if ($exchangeDirection === 'metalToCurrency'): ?>
-
+            <div class="drop-list">
+                <div class="from">
             <label for="targetCurrency">Target Metal (in ounces):</label>
+            <div class="select-box">
             <select id="targetCurrency" name="targetCurrency" required>
                 <?php 
                 foreach ($preciousMetals as $metal => $symbol): ?>
@@ -180,8 +264,15 @@ button:hover {
                     <option value="<?php echo $symbol; ?>" <?php echo $selected; ?>>(<?php echo strtoupper($symbol); ?>) <?php echo $metal; ?></option>
                 <?php endforeach; ?>
             </select>
-
+            </div>
+                </div>
+            <div class="swap-icon">
+            <button type="submit" name="toggleExchangeDirection"><i class="fa-solid fa-arrow-right-arrow-left"></i></button>
+            <input type="hidden" name="exchangeDirection" id="exchangeDirection" value="<?php echo $exchangeDirection; ?>">
+                </div>
+                <div class="to">
             <label for="baseCurrency">Base Currency:</label>
+            <div class="select-box">
             <select id="baseCurrency" name="baseCurrency" required>
                 <?php foreach ($dataCurrencies as $currencyCode => $currencyName): ?>
                     <option value="<?php echo $currencyCode; ?>" <?php echo ($_GET['baseCurrency'] === $currencyCode || (!isset($_GET['baseCurrency']) && $currencyCode === 'usd')) ? 'selected' : ''; ?>>
@@ -189,10 +280,14 @@ button:hover {
                     </option>
                 <?php endforeach; ?>
             </select>
-
+            </div>
+                </div>
+            </div>
         <?php else: ?>
-
+            <div class="drop-list">
+                <div class="from">
             <label for="baseCurrency">Base Currency:</label>
+            <div class="select-box">
             <select id="baseCurrency" name="baseCurrency" required>
                 <?php foreach ($dataCurrencies as $currencyCode => $currencyName): ?>
                     <option value="<?php echo $currencyCode; ?>" <?php echo ($_GET['baseCurrency'] === $currencyCode || (!isset($_GET['baseCurrency']) && $currencyCode === 'usd')) ? 'selected' : ''; ?>>
@@ -200,8 +295,15 @@ button:hover {
                     </option>
                 <?php endforeach; ?>
             </select>
-
+            </div>
+                </div>
+                <div class="swap-icon">
+            <button type="submit" name="toggleExchangeDirection"><i class="fa-solid fa-arrow-right-arrow-left"></i></button>
+            <input type="hidden" name="exchangeDirection" id="exchangeDirection" value="<?php echo $exchangeDirection; ?>">
+                </div>
+                <div class="to">
             <label for="targetCurrency">Target Metal (in ounces):</label>
+            <div class="select-box">
             <select id="targetCurrency" name="targetCurrency" required>
                 <?php foreach ($preciousMetals as $metal => $symbol): ?>
                     <?php 
@@ -215,13 +317,14 @@ button:hover {
                     <option value="<?php echo $symbol; ?>" <?php echo $selected; ?>>(<?php echo strtoupper($symbol); ?>) <?php echo $metal; ?></option>
                 <?php endforeach; ?>
             </select>
+                    </div>
+                </div>
+            </div>
             <?php endif; ?>
 
+            
+            <button id="convert" type="submit" name="convert">Convert</button>
 
-            <button type="submit" name="convert">Convert</button>
-
-            <button type="submit" name="toggleExchangeDirection">Toggle Direction</button>
-            <input type="hidden" name="exchangeDirection" id="exchangeDirection" value="<?php echo $exchangeDirection; ?>">
         
         </form>
         <?php
@@ -229,28 +332,28 @@ button:hover {
         ?>
         <div id="result">
             <!-- Display conversion results here -->
-    <?php
-        if ($convertedAmount) {
-            $baseCurrencySymbol = isset($_GET['baseCurrency']) ? $_GET['baseCurrency'] : 'UnknownBaseCurrency';
-            $baseCurrencyName = isset($baseOptions) ? $baseOptions : 'Unknown Base Currency';
-            $targetCurrencyName = isset($targetOptions) ? $targetOptions : 'Unknown Target Currency';
+        <?php
+            if ($convertedAmount) {
+                $baseCurrencySymbol = isset($_GET['baseCurrency']) ? $_GET['baseCurrency'] : 'UnknownBaseCurrency';
+                $baseCurrencyName = isset($baseOptions) ? $baseOptions : 'Unknown Base Currency';
+                $targetCurrencyName = isset($targetOptions) ? $targetOptions : 'Unknown Target Currency';
 
-            echo "<p>$amount " . strtoupper($baseCurrencyName) . " =</p>";
-            echo "<p>$convertedAmount " . strtoupper($targetCurrencyName) . "</p>";
+                echo "<p id='amount-display'>$amount " . strtoupper($baseCurrencyName) . " =</p>";
+                echo "<p id='converted-display'>$convertedAmount " . strtoupper($targetCurrencyName) . "</p>";
 
-            if ($exchangeDirection === 'metalToCurrency') {
-                echo "<p>1 " . strtoupper($targetCurrencyName) . " = " . number_format($exchangeRate, 7) . " " . strtoupper($baseCurrencyName) . "</p>";
-                echo "<p>1 " . strtoupper($baseCurrencyName) . " = " . number_format(1 / $exchangeRate, 7) . " " . strtoupper($targetCurrencyName) . "</p>";
-            } else {
-                // Corrected the order of units in the following lines
-                echo "<p>1 " . strtoupper($baseCurrencyName) . " = " . number_format($exchangeRate, 7) . " " . strtoupper($targetCurrencyName) . "</p>";
-                echo "<p>1 " . strtoupper($targetCurrencyName) . " = " . number_format(1 / $exchangeRate, 7) . " " . strtoupper($baseCurrencyName) . "</p>";
+                if ($exchangeDirection === 'metalToCurrency') {
+                    echo "<p id='fromthis'>1 " . strtoupper($targetCurrencyName) . " = " . number_format($exchangeRate, 7) . " " . strtoupper($baseCurrencyName) . "</p>";
+                    echo "<p id='tothat'>1 " . strtoupper($baseCurrencyName) . " = " . number_format(1 / $exchangeRate, 7) . " " . strtoupper($targetCurrencyName) . "</p>";
+                } else {
+                    // Corrected the order of units in the following lines
+                    echo "<p id='fromthis'>1 " . strtoupper($baseCurrencyName) . " = " . number_format($exchangeRate, 7) . " " . strtoupper($targetCurrencyName) . "</p>";
+                    echo "<p id='tothat'>1 " . strtoupper($targetCurrencyName) . " = " . number_format(1 / $exchangeRate, 7) . " " . strtoupper($baseCurrencyName) . "</p>";
+                }
             }
-        }
-    ?>         
-    </div>
+        ?>         
+        </div>
 
     </main>
-
+    </div>
 </body>
 </html>
