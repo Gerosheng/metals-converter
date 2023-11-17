@@ -7,15 +7,18 @@ $preciousMetals = [
     'Silver' => 'xag',
     'Platinum' => 'xpt',
     'Palladium' => 'xpd',
-    // Add more metals as needed
 ];
 
 //default value is 'currencyToMetal'
 $exchangeDirection = isset($_GET['exchangeDirection']) ? $_GET['exchangeDirection'] : 'currencyToMetal';
 
+//API for currencies and their symbol
+//initialise $dataCurrencies
 $apiCurrenciesUrl = "https://cdn.jsdelivr.net/gh/fawazahmed0/currency-api@1/latest/currencies.json";
 $jsonCurrency = file_get_contents($apiCurrenciesUrl);
 $dataCurrencies = json_decode($jsonCurrency, true);
+
+//determine options values when exchange direction is switched
 if ($exchangeDirection === 'currencyToMetal') {
     $baseOptions = $_GET['baseCurrency'];
     $targetOptions = $_GET['targetCurrency'];
@@ -26,7 +29,7 @@ if ($exchangeDirection === 'currencyToMetal') {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-
+    // Listens if it's the convert button that has been clicked
     if (isset($_GET['convert'])) {
         // Get parameters from the URL
         $baseCurrency = isset($_GET['baseCurrency']) ? $_GET['baseCurrency'] : 'usd';
@@ -43,11 +46,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             $targetCurrency = 'xau';
         }
 
-        $apiCurrenciesUrl = "https://cdn.jsdelivr.net/gh/fawazahmed0/currency-api@1/latest/currencies.json";
-        $jsonCurrency = file_get_contents($apiCurrenciesUrl);
-        $dataCurrencies = json_decode($jsonCurrency, true);
-        
-        // Construct the API URL
+        // Construct the API URL for latest rates
         $apiUrl = "https://cdn.jsdelivr.net/gh/fawazahmed0/currency-api@1/latest/currencies/$baseCurrency.json";
 
         // Fetch the currencies data from the API
@@ -75,14 +74,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             echo "Error decoding JSON response or invalid base/target currency.";
         }
     }
-
+    // Listens for exchange directiion toggle
     elseif (isset($_GET['toggleExchangeDirection'])) {
         // Toggle the exchange direction
         $exchangeDirection = ($exchangeDirection === 'currencyToMetal') ? 'metalToCurrency' : 'currencyToMetal';
-    
-
     }
-
 }
 ?>
 
@@ -92,6 +88,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Precious Metals Converter</title>
+    <!--
     <style>
     body {
         font-family: 'Arial', sans-serif;
@@ -145,6 +142,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         margin-top: 20px;
     }
 </style>
+-->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+
 </head>
 <body>
     <header>
@@ -154,46 +154,57 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         <form action="" method="get" id="converterForm">
 
             <label for="amount">Amount:</label>
-            <input type="number" id="amount" name="amount" >
+            <input type="number" id="amount" name="amount" value="<?php echo isset($_GET['amount']) ? htmlspecialchars($_GET['amount']) : ''; ?>">
 
         <?php if ($exchangeDirection === 'metalToCurrency'): ?>
 
             <label for="targetCurrency">Target Metal (in ounces):</label>
             <select id="targetCurrency" name="targetCurrency" required>
-                <?php foreach ($preciousMetals as $metal => $symbol): ?>
-                    <?php $selected = ($metal === 'Gold') ? 'selected' : ''; ?>
+                <?php 
+                foreach ($preciousMetals as $metal => $symbol): ?>
+                    <?php 
+                        $selected = "";
+                        if(isset($_GET['targetCurrency']) && $_GET['targetCurrency'] === $symbol){
+                            $selected = 'selected';
+                        } elseif($metal === 'Gold') {
+                            $selected = 'selected';
+                        } 
+                        ?>
                     <option value="<?php echo $symbol; ?>" <?php echo $selected; ?>>(<?php echo strtoupper($symbol); ?>) <?php echo $metal; ?></option>
                 <?php endforeach; ?>
             </select>
 
             <label for="baseCurrency">Base Currency:</label>
             <select id="baseCurrency" name="baseCurrency" required>
-                <?php 
-                    foreach ($dataCurrencies as $currencyCode => $currencyName): ?>
-                    <?php $selected = ($currencyCode === 'usd') ? 'selected' : ''; ?>
-                    <option value="<?php echo $currencyCode; ?>" <?php echo $selected; ?>>
-                    (<?php echo strtoupper($currencyCode); ?>) <?php echo $currencyName; ?>
+                <?php foreach ($dataCurrencies as $currencyCode => $currencyName): ?>
+                    <option value="<?php echo $currencyCode; ?>" <?php echo ($_GET['baseCurrency'] === $currencyCode || (!isset($_GET['baseCurrency']) && $currencyCode === 'usd')) ? 'selected' : ''; ?>>
+                        (<?php echo strtoupper($currencyCode); ?>) <?php echo $currencyName; ?>
                     </option>
-                    <?php endforeach; ?>
+                <?php endforeach; ?>
             </select>
 
         <?php else: ?>
 
             <label for="baseCurrency">Base Currency:</label>
             <select id="baseCurrency" name="baseCurrency" required>
-                <?php 
-                    foreach ($dataCurrencies as $currencyCode => $currencyName): ?>
-                        <?php $selected = ($currencyCode === 'usd') ? 'selected' : ''; ?>
-                        <option value="<?php echo $currencyCode; ?>" <?php echo $selected; ?>>
+                <?php foreach ($dataCurrencies as $currencyCode => $currencyName): ?>
+                    <option value="<?php echo $currencyCode; ?>" <?php echo ($_GET['baseCurrency'] === $currencyCode || (!isset($_GET['baseCurrency']) && $currencyCode === 'usd')) ? 'selected' : ''; ?>>
                         (<?php echo strtoupper($currencyCode); ?>) <?php echo $currencyName; ?>
-                        </option>
-                    <?php endforeach; ?>
+                    </option>
+                <?php endforeach; ?>
             </select>
 
             <label for="targetCurrency">Target Metal (in ounces):</label>
             <select id="targetCurrency" name="targetCurrency" required>
                 <?php foreach ($preciousMetals as $metal => $symbol): ?>
-                    <?php $selected = ($metal === 'Gold') ? 'selected' : ''; ?>
+                    <?php 
+                        $selected = "";
+                        if(isset($_GET['targetCurrency']) && $_GET['targetCurrency'] === $symbol){
+                            $selected = 'selected';
+                        } elseif($metal === 'Gold') {
+                            $selected = 'selected';
+                        } 
+                        ?>
                     <option value="<?php echo $symbol; ?>" <?php echo $selected; ?>>(<?php echo strtoupper($symbol); ?>) <?php echo $metal; ?></option>
                 <?php endforeach; ?>
             </select>
@@ -233,5 +244,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     </div>
 
     </main>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
+
 </body>
 </html>
